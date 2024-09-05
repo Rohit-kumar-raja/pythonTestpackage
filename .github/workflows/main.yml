@@ -1,2 +1,35 @@
-services:
-    
+name: Upload Python Package
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  pypi-publish:
+    name: Upload release to PyPI
+    if: |
+      startsWith(github.ref, 'refs/tags/') && (
+        contains(github.ref, 'refs/tags/main') || 
+        (contains(github.ref, 'refs/tags/feat') && (contains(github.ref, 'alpha') || contains(github.ref, 'beta')))
+      )
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build
+    - name: Build package
+      run: python -m build
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@release/v1
